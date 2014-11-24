@@ -6,7 +6,8 @@ import scala.collection.mutable.ListBuffer
  * Created by Anirudh on 11/23/2014.
  */
 
-case class initWorker(startRange: Int, endRange: Int, pieValues: ListBuffer[(Int, Int, Int)])
+case class InitWorker(numUsers:Int, numUserPerWorker:Int, startID:Int, endID:Int)
+//case class initWorker(startRange: Int, endRange: Int, pieValues: ListBuffer[(Int, Int, Int)])
 case class sendTweetToWorker(tweet: String, senderId: Int)
 case class giveTweetFromWorker(senderId: Int, clientActorSystem: String, clientIpAddress: String, clientPort: String)
 case class tweetFromSibling(tweet: String, senderId: Int)
@@ -19,16 +20,37 @@ object ServerWorker {
 class ServerWorker(nrOfWorkers: Int) extends Actor {
 
   //Added by Mugdha
-  var map:Map[Int, User] = Map.empty[Int, User]
+  var map = Map[Int, User]()
   var connectionString: String = ""
 
   def receive = {
-    case initWorker(startRange: Int, endRange: Int,pieValues: ListBuffer[(Int, Int, Int)]) => initializeWorker(startRange: Int, endRange: Int, pieValues: ListBuffer[(Int, Int, Int)])
-    case giveTweetFromWorker(senderId: Int, clientActorSystem: String, clientIpAddress: String, clientPort: String) => giveTweet(senderId,clientActorSystem,clientIpAddress, clientPort)
+  	case InitWorker(numUsers:Int, numUserPerWorker:Int, start:Int, end:Int) => {
+      initialize(numUsers, numUserPerWorker, start, end-1);
+    }   
+	case giveTweetFromWorker(senderId: Int, clientActorSystem: String, clientIpAddress: String, clientPort: String) => giveTweet(senderId,clientActorSystem,clientIpAddress, clientPort)
     case sendTweetToWorker(tweet: String, senderId: Int) => sendTweet(tweet, senderId)
     case tweetFromSibling(tweet: String, senderId: Int) => tweetFromSiblingWorker(tweet, senderId)
   }
 
+  def initialize(numUsers:Int, numUserPerWorker:Int, start:Int, end:Int) = {
+    val ch:Chart = new Chart(numUsers:Int, numUserPerWorker:Int)
+    var IDs:Int = 0
+    for (IDs <- start to end){
+      val list:List[Int] = ch.getFollowersList(IDs);
+      val usr:User = new User()
+      usr.followers = list
+      map += (IDs -> usr)
+    }
+    printMap()
+  }
+  
+  def printMap() = {
+    println("Map size: " + map.size)
+    map.foreach { case (key, value) => 
+    println(">>> key=" + key + ", value=" + value.followers ) }
+/*    map.foreach(p => 
+      println(">>> key=" + p._1 + ", value=" + p._2))
+*/ }
 
 
   private def tweetFromSiblingWorker(tweet: String, senderId: Int): Unit ={
