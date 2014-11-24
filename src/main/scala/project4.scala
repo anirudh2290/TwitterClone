@@ -1,5 +1,6 @@
-import akka.actor.ActorSystem
-import akka.actor.{Props, ActorSystem}
+//Following import added by Anirudh for testing
+//import _root_.Project4_client.tweetTestForServer
+import akka.actor.{ActorRef, ActorSystem, Props}
 import com.typesafe.config.ConfigFactory
 
 /**
@@ -12,6 +13,9 @@ object project4 {
     }
     val numberOfUsers = (args(0).toInt)
     val isServer      = (args(1).toBoolean)
+    println("="*20)
+    println("numberOfUsers are " + numberOfUsers)
+    println("isServer value is " + isServer)
     //get the superboss instances here
     val root = ConfigFactory.load()
     val serverProps  = root.getConfig("serverSystem")
@@ -19,7 +23,15 @@ object project4 {
 
     if(isServer){
       val system = ActorSystem("twitter-server", serverProps)
-      //val server = system.actorOf(Props[Server], "t1")
+      val server = system.actorOf(Server.props("twitter-server",clientProps.getString("akka.remote.netty.tcp.hostname"),clientProps.getString("akka.remote.netty.tcp.port") ), "superboss1")
+      server ! Init(numberOfUsers)
+      //Following added for testing
+      val w = system.actorOf(Props[Worker], "w" + 0)
+      w ! tweetTestForServer(server, "timepass test 1")
+      w ! tweetTestForServer(server, "timepass test 2")
+      w ! tweetTestForServer(server, "timepass test 3")
+      w ! tweetTestForServer(server, "timepass test 4")
+      w ! receiveTweetForServer(server)
       //server ! init(numberOfUsers, true)
     } else {
 

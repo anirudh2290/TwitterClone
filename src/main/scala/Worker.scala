@@ -18,10 +18,22 @@ import scala.util.Random
 import akka.actor.Cancellable
 import Project4_client._
 import system.dispatcher
-        
+
+case class Work()
+case class tweetPrint(random_tweet: String)
+//Added by Anirudh for testing server begin
+case class tweetTestForServer(tp: ActorRef, tweetString: String)
+case class receiveTweetForServer(tp: ActorRef)
+//Added by Anirudh for testing server end
+
 class Worker extends Actor {
   var count = 0
   def receive = {
+    //Added by Anirudh tweetTestForServer begin
+    case tweetTestForServer(tp: ActorRef, tweetString) => tp ! sendTweetToRouter(tweetString)
+    case receiveTweetForServer(tp: ActorRef) => tp ! giveTweetFromRouter()
+    //Added by Anirudh tweetTestForServer begin
+
     case Work() =>
       self ! Tick
     case Tick =>

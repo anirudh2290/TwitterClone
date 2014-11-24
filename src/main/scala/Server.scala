@@ -21,36 +21,39 @@ class Server(clientActorSystem: String, clientIpAddress: String, clientPort: Str
   /*keep number of server workers equal to nr of cores*/
   val nrOfCores: Int = Runtime.getRuntime().availableProcessors()
   
+  def receive = {
+    //case init(numberOfUsers: Int, isFirstServer: Boolean) => InitializeServer(numberOfUsers, isFirstServer)
+    //MUGDHA:: Changed the parameter passed to numUsers Please take a look
+    case Init(numUsers) => { InitializeServer(numUsers) }
+  	case sendTweetToRouter(tweet: String) => sendTweetToRouter(tweet,sender())
+    case giveTweetFromRouter() => giveTweetFromRouter(sender())
+  }
+
   def InitializeServer(numUsers: Int) {
     val numUserPerWorker:Int = Math.ceil(numUsers.toDouble/nrOfCores.toDouble).toInt;
     println("Each worker will keep track of: " + numUserPerWorker)
-    
+
     var ServerWorkers:List[ActorRef] = Nil
     var i:Int = 0
     while(i<nrOfCores){
+      println("Inside nrOfCores")
       //when context when system?
-      ServerWorkers ::= context.actorOf(Props[ServerWorker])
+      //modified name for ServerWorkers
+      ServerWorkers ::= context.actorOf(ServerWorker.props(nrOfCores), i.toString())
       i += 1
-     }
-     i = 0;
-      
-     while (i<Math.min(nrOfCores, numUsers )) {
-        //when context when system?
-        val start:Int = i*numUserPerWorker;
-      	//val end:Int = if (i*num+num < numUsers)  i*num+num else numUsers
-        val end:Int = Math.min(i*numUserPerWorker+numUserPerWorker, numUsers)  
-         
-        ServerWorkers(i) ! InitWorker(numUsers, numUserPerWorker, start, end)
-        i += 1
-      }
+    }
+    i = 0;
 
-  }
-  
-  def receive = {
-    //case init(numberOfUsers: Int, isFirstServer: Boolean) => InitializeServer(numberOfUsers, isFirstServer)
-    case Init(numUsers) => { InitializeServer(nrOfCores) }
-  	case sendTweetToRouter(tweet: String) => sendTweetToRouter(tweet,sender())
-    case giveTweetFromRouter() => giveTweetFromRouter(sender())
+    while (i<Math.min(nrOfCores, numUsers )) {
+      //when context when system?
+      val start:Int = i*numUserPerWorker;
+      //val end:Int = if (i*num+num < numUsers)  i*num+num else numUsers
+      val end:Int = Math.min(i*numUserPerWorker+numUserPerWorker, numUsers)
+
+      ServerWorkers(i) ! InitWorker(numUsers, numUserPerWorker, start, end)
+      i += 1
+    }
+
   }
 
   //isFirstServer is used so that we can additional instances to the routing level

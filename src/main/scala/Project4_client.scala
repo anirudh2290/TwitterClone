@@ -36,8 +36,6 @@ object Project4_client extends App {
   sealed trait twitterClient
   case object CreateClients extends twitterClient
   case object Tick extends twitterClient
-  case class Work() extends twitterClient
-  case class tweetPrint(random_tweet: String) extends twitterClient
   val system = ActorSystem("TwitterCient")
   // val clientActor = system.actorOf(Props[ClientActor], name = "clientActor")
   val listener = system.actorOf(Props[Listener], name = "listener")

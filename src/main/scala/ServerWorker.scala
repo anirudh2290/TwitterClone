@@ -22,6 +22,7 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
   //Added by Mugdha
   var map = Map[Int, User]()
   var connectionString: String = ""
+  var limit: Int = 3
 
   def receive = {
   	case InitWorker(numUsers:Int, numUserPerWorker:Int, start:Int, end:Int) => {
@@ -33,6 +34,7 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
   }
 
   def initialize(numUsers:Int, numUserPerWorker:Int, start:Int, end:Int) = {
+
     val ch:Chart = new Chart(numUsers:Int, numUserPerWorker:Int)
     var IDs:Int = 0
     for (IDs <- start to end){
@@ -41,11 +43,12 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
       usr.followers = list
       map += (IDs -> usr)
     }
+    println("Inside id " + self.path.name + "numUserPerWorker is " + numUserPerWorker)
     printMap()
   }
   
   def printMap() = {
-    println("Map size: " + map.size)
+    println("Map size for worker id " + self.path.name + ": " + map.size)
     map.foreach { case (key, value) => 
     println(">>> key=" + key + ", value=" + value.followers ) }
 /*    map.foreach(p => 
@@ -55,12 +58,18 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
 
   private def tweetFromSiblingWorker(tweet: String, senderId: Int): Unit ={
     var user: User = map.getOrElse(senderId, null)
+
+
     if(user != null){
       user.msgQ.enqueue(tweet)
     } else {
       user = new User()
       user.msgQ.enqueue(tweet)
       map += (senderId -> user)
+    }
+
+    if(user.msgQ.size > limit){
+      user.msgQ.dequeue()
     }
   }
 
@@ -70,7 +79,7 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
 
   private def sendTweet(tweet: String, senderId: Int): Unit ={
     var user: User = map.getOrElse(senderId, null)
-    var workerContaintFollower:Int = -1
+    var workerContainingFollower:Int = -1
 
     if(user != null) {
       // if user not null, enqueue tweet to message queue and followers message queue
@@ -87,13 +96,21 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
       user.msgQ.enqueue(tweet)
       map += (senderId -> user)
     }
+
+    if(user.msgQ.size > limit){
+      user.msgQ.dequeue()
+    }
   }
 
   private def giveTweet(senderId: Int, clientActorSystem: String, clientIpAddress: String, clientPort: String): Unit = {
     //TODO same tradeoff made as above. Have to evaluate
+    println("Inside giveTweet")
     var u: User = map.getOrElse(senderId, null)
     connectionString = "akka.tcp://" + clientActorSystem + "@" + clientIpAddress + clientPort + "/user/" + senderId.toString()
     //change this according to the method implemented in the client
-    context.actorSelection(connectionString) ! receive(u.msgQ)
+    //context.actorSelection(connectionString) ! receive(u.msgQ)
+    println("="*20)
+    println(u.msgQ.toString())
+    println("="*20)
   }
 }
