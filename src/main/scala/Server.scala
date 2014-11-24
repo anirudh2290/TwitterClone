@@ -33,23 +33,25 @@ class Server(clientActorSystem: String, clientIpAddress: String, clientPort: Str
     val numUserPerWorker:Int = Math.ceil(numUsers.toDouble/nrOfCores.toDouble).toInt;
     println("Each worker will keep track of: " + numUserPerWorker)
 
-    var ServerWorkers:List[ActorRef] = Nil
+    var ServerWorkers:ListBuffer[ActorRef] = ListBuffer[ActorRef]()
     var i:Int = 0
     while(i<nrOfCores){
       println("Inside nrOfCores")
       //when context when system?
       //modified name for ServerWorkers
-      ServerWorkers ::= context.actorOf(ServerWorker.props(nrOfCores), i.toString())
+      ServerWorkers += context.actorOf(ServerWorker.props(nrOfCores), i.toString())
       i += 1
     }
     i = 0;
 
+    println(ServerWorkers.toString())
+
     while (i<Math.min(nrOfCores, numUsers )) {
       //when context when system?
-      val start:Int = i*numUserPerWorker;
+      val start:Int = i
       //val end:Int = if (i*num+num < numUsers)  i*num+num else numUsers
-      val end:Int = Math.min(i*numUserPerWorker+numUserPerWorker, numUsers)
-
+      //val end:Int = Math.min(i*numUserPerWorker+numUserPerWorker, numUsers)
+      val end:Int = numUsers
       ServerWorkers(i) ! InitWorker(numUsers, numUserPerWorker, start, end)
       i += 1
     }
@@ -75,6 +77,7 @@ class Server(clientActorSystem: String, clientIpAddress: String, clientPort: Str
   private def sendTweetToRouter(tweet: String, senderRef: ActorRef): Unit = {
     var senderNameString = senderRef.path.name
     var senderId = senderNameString.substring(1).toInt
+    println("sendTweetToRouter senderId " + senderId )
     var sendTo: Int = senderId % nrOfCores
     //route to serverworker with id = sendTo
     var actr = context.actorSelection(sendTo.toString())

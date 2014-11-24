@@ -26,12 +26,15 @@ object project4 {
       val server = system.actorOf(Server.props("twitter-server",clientProps.getString("akka.remote.netty.tcp.hostname"),clientProps.getString("akka.remote.netty.tcp.port") ), "superboss1")
       server ! Init(numberOfUsers)
       //Following added for testing
+
+      Thread.sleep(1000)
       val w = system.actorOf(Props[Worker], "w" + 0)
       w ! tweetTestForServer(server, "timepass test 1")
       w ! tweetTestForServer(server, "timepass test 2")
       w ! tweetTestForServer(server, "timepass test 3")
       w ! tweetTestForServer(server, "timepass test 4")
       w ! receiveTweetForServer(server)
+
       //server ! init(numberOfUsers, true)
     } else {
 

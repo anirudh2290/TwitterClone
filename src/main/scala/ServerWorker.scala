@@ -11,6 +11,8 @@ case class InitWorker(numUsers:Int, numUserPerWorker:Int, startID:Int, endID:Int
 case class sendTweetToWorker(tweet: String, senderId: Int)
 case class giveTweetFromWorker(senderId: Int, clientActorSystem: String, clientIpAddress: String, clientPort: String)
 case class tweetFromSibling(tweet: String, senderId: Int)
+//Added for testing
+case class printMessageQueue()
 
 object ServerWorker {
   def props(nrOfWorkers: Int): Props =
@@ -31,19 +33,24 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
 	case giveTweetFromWorker(senderId: Int, clientActorSystem: String, clientIpAddress: String, clientPort: String) => giveTweet(senderId,clientActorSystem,clientIpAddress, clientPort)
     case sendTweetToWorker(tweet: String, senderId: Int) => sendTweet(tweet, senderId)
     case tweetFromSibling(tweet: String, senderId: Int) => tweetFromSiblingWorker(tweet, senderId)
+    case printMessageQueue() => printMessageQueueVal()
   }
 
   def initialize(numUsers:Int, numUserPerWorker:Int, start:Int, end:Int) = {
+    var numUsersPerWorkerAct:Int = 0
+    numUsersPerWorkerAct = (end - start)/4 + 1
 
     val ch:Chart = new Chart(numUsers:Int, numUserPerWorker:Int)
     var IDs:Int = 0
-    for (IDs <- start to end){
-      val list:List[Int] = ch.getFollowersList(IDs);
+    var beginVal = start
+    while(beginVal < end){
+      val list:List[Int] = ch.getFollowersList(beginVal);
       val usr:User = new User()
       usr.followers = list
-      map += (IDs -> usr)
+      map += (beginVal -> usr)
+      beginVal += nrOfWorkers
     }
-    println("Inside id " + self.path.name + "numUserPerWorker is " + numUserPerWorker)
+    println("Inside id " + self.path.name + " numUserPerWorker is " + numUserPerWorker)
     printMap()
   }
   
@@ -55,13 +62,19 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
       println(">>> key=" + p._1 + ", value=" + p._2))
 */ }
 
+  private def printMessageQueueVal(): Unit ={
+    println("Inside printMessageQueue for " + self.path.name)
+    map.foreach { case (key, value) =>
+      println(">>>key=" + key + "msg queue=" + value.msgQ.toString() ) }
+  }
 
   private def tweetFromSiblingWorker(tweet: String, senderId: Int): Unit ={
     var user: User = map.getOrElse(senderId, null)
-
+    println("Inside tweetFromSiblingWorker senderId is " + senderId)
 
     if(user != null){
       user.msgQ.enqueue(tweet)
+      map += (senderId -> user)
     } else {
       user = new User()
       user.msgQ.enqueue(tweet)
@@ -78,19 +91,32 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
   }
 
   private def sendTweet(tweet: String, senderId: Int): Unit ={
+    println("senderId is " + senderId)
+    println("Inside worker " + self.path.name)
+    println("size of map is " + map.size)
+    println("does map contain the index senderId " + map.contains(senderId))
+    println("||"*10)
+    printMap()
+    println("||"*10)
     var user: User = map.getOrElse(senderId, null)
+
     var workerContainingFollower:Int = -1
 
     if(user != null) {
       // if user not null, enqueue tweet to message queue and followers message queue
       user.msgQ.enqueue(tweet)
+      println("Inside sendTweet if")
        for(i<-0 to user.followers.length - 1){
          //TODO evaluate performance of actorSelection and decide if it is better to store ActorSelections. Memory vs cpu processing tradeoff involved
-         var workerContainingFollower = user.followers(i) % nrOfWorkers
-         context.actorSelection("../" + workerContainingFollower.toString()) ! tweetFromSibling(tweet, senderId)
+         println("Inside followers send")
+         if(senderId != user.followers(i)) {
+           workerContainingFollower = user.followers(i) % nrOfWorkers
+           context.actorSelection("../" + workerContainingFollower.toString()) ! tweetFromSibling(tweet, user.followers(i))
+         }
        }
 
     } else {
+      println("Inside sendTweet else")
       // if user is null then create new user and enqueue to message queue
       user = new User()
       user.msgQ.enqueue(tweet)
@@ -111,6 +137,12 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
     //context.actorSelection(connectionString) ! receive(u.msgQ)
     println("="*20)
     println(u.msgQ.toString())
+    for(i <-0 to u.followers.length - 1) {
+      println("Inside followers")
+      var workerContainingFollower = u.followers(i) % nrOfWorkers
+      println("workerContainingFollower is " + workerContainingFollower)
+      context.actorSelection("../" + workerContainingFollower.toString()) ! printMessageQueue()
+    }
     println("="*20)
   }
 }
