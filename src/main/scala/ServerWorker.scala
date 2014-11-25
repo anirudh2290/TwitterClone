@@ -37,6 +37,7 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
   }
 
   def initialize(numUsers:Int, numUserPerWorker:Int, start:Int, end:Int) = {
+    //not using numUsersPerWorker here
     var numUsersPerWorkerAct:Int = 0
     numUsersPerWorkerAct = (end - start)/4 + 1
 
@@ -50,8 +51,7 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
       map += (beginVal -> usr)
       beginVal += nrOfWorkers
     }
-    println("Inside id " + self.path.name + " numUserPerWorker is " + numUserPerWorker)
-    printMap()
+    //printMap()
   }
   
   def printMap() = {
@@ -70,7 +70,6 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
 
   private def tweetFromSiblingWorker(tweet: String, senderId: Int): Unit ={
     var user: User = map.getOrElse(senderId, null)
-    println("Inside tweetFromSiblingWorker senderId is " + senderId)
 
     if(user != null){
       user.msgQ.enqueue(tweet)
@@ -91,13 +90,6 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
   }
 
   private def sendTweet(tweet: String, senderId: Int): Unit ={
-    println("senderId is " + senderId)
-    println("Inside worker " + self.path.name)
-    println("size of map is " + map.size)
-    println("does map contain the index senderId " + map.contains(senderId))
-    println("||"*10)
-    printMap()
-    println("||"*10)
     var user: User = map.getOrElse(senderId, null)
 
     var workerContainingFollower:Int = -1
@@ -105,10 +97,8 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
     if(user != null) {
       // if user not null, enqueue tweet to message queue and followers message queue
       user.msgQ.enqueue(tweet)
-      println("Inside sendTweet if")
        for(i<-0 to user.followers.length - 1){
          //TODO evaluate performance of actorSelection and decide if it is better to store ActorSelections. Memory vs cpu processing tradeoff involved
-         println("Inside followers send")
          if(senderId != user.followers(i)) {
            workerContainingFollower = user.followers(i) % nrOfWorkers
            context.actorSelection("../" + workerContainingFollower.toString()) ! tweetFromSibling(tweet, user.followers(i))
@@ -116,7 +106,6 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
        }
 
     } else {
-      println("Inside sendTweet else")
       // if user is null then create new user and enqueue to message queue
       user = new User()
       user.msgQ.enqueue(tweet)
@@ -130,19 +119,16 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
 
   private def giveTweet(senderId: Int, clientActorSystem: String, clientIpAddress: String, clientPort: String): Unit = {
     //TODO same tradeoff made as above. Have to evaluate
-    println("Inside giveTweet")
     var u: User = map.getOrElse(senderId, null)
     connectionString = "akka.tcp://" + clientActorSystem + "@" + clientIpAddress + clientPort + "/user/" + senderId.toString()
     //change this according to the method implemented in the client
     //context.actorSelection(connectionString) ! receive(u.msgQ)
-    println("="*20)
-    println(u.msgQ.toString())
+    /*
     for(i <-0 to u.followers.length - 1) {
       println("Inside followers")
       var workerContainingFollower = u.followers(i) % nrOfWorkers
-      println("workerContainingFollower is " + workerContainingFollower)
       context.actorSelection("../" + workerContainingFollower.toString()) ! printMessageQueue()
     }
-    println("="*20)
+    */
   }
 }
