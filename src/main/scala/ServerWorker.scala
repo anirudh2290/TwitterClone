@@ -21,6 +21,7 @@ object ServerWorker {
 
 class ServerWorker(nrOfWorkers: Int) extends Actor {
 
+  println(self.path)
   //Added by Mugdha
   var map = Map[Int, User]()
   var connectionString: String = ""
@@ -120,9 +121,10 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
   private def giveTweet(senderId: Int, clientActorSystem: String, clientIpAddress: String, clientPort: String): Unit = {
     //TODO same tradeoff made as above. Have to evaluate
     var u: User = map.getOrElse(senderId, null)
-    connectionString = "akka.tcp://" + clientActorSystem + "@" + clientIpAddress + clientPort + "/user/" + senderId.toString()
+    connectionString = "akka.tcp://" + clientActorSystem + "@" + clientIpAddress + ":" + clientPort + "/user/clientmaster1/w" + senderId.toString()
+    println("connectionString is " + connectionString)
     //change this according to the method implemented in the client
-    //context.actorSelection(connectionString) ! receive(u.msgQ)
+    context.actorSelection(connectionString) ! printQueue(u.msgQ)
     /*
     for(i <-0 to u.followers.length - 1) {
       println("Inside followers")

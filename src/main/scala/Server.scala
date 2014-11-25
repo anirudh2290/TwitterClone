@@ -9,7 +9,7 @@ import scala.collection.mutable.ListBuffer
 //case class init(numberOfUsers: Int, isFirstServer: Boolean)
 case class sendTweetToRouter(tweet: String)
 case class giveTweetFromRouter()
-case class Init(numUsers:Int)
+case class Init(numUsers:Int, isFirstServer: Boolean)
 
 object Server {
   def props(clientActorSystem: String, clientIpAddress: String, clientPort: String):Props =
@@ -24,7 +24,11 @@ class Server(clientActorSystem: String, clientIpAddress: String, clientPort: Str
   def receive = {
     //case init(numberOfUsers: Int, isFirstServer: Boolean) => InitializeServer(numberOfUsers, isFirstServer)
     //MUGDHA:: Changed the parameter passed to numUsers Please take a look
-    case Init(numUsers) => { InitializeServer(numUsers) }
+    case Init(numUsers, isFirstServer) => {
+      if(isFirstServer) {
+        InitializeServer(numUsers)
+      }
+    }
   	case sendTweetToRouter(tweet: String) => sendTweetToRouter(tweet,sender())
     case giveTweetFromRouter() => giveTweetFromRouter(sender())
   }
