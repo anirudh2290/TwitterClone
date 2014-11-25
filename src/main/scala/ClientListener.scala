@@ -16,9 +16,9 @@ import java.util.concurrent.TimeUnit
 import akka.actor.UntypedActor
 import scala.util.Random
 import akka.actor.Cancellable
-import Project4_client._
+import ClientMaster._
 
-class Listener extends Actor {
+class ClientListener extends Actor {
   def receive = {
     case tweetPrint(random_tweet: String) =>
       println(" This is the tweet from listener " + random_tweet)

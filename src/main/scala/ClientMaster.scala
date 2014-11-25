@@ -30,15 +30,18 @@ class ClientActor extends Actor {
 }
 * 
 */
-object Project4_client extends App {
+object ClientMaster extends App {
 
   println("Client ready")
   sealed trait twitterClient
   case object CreateClients extends twitterClient
   case object Tick extends twitterClient
+  case object Tweet extends twitterClient
+  case class Work() extends twitterClient
+  case class tweetPrint(random_tweet: String) extends twitterClient
   val system = ActorSystem("TwitterCient")
   // val clientActor = system.actorOf(Props[ClientActor], name = "clientActor")
-  val listener = system.actorOf(Props[Listener], name = "listener")
+  val listener = system.actorOf(Props[ClientListener], name = "listener")
   initialize(nrOfWorkers = 1)
   def initialize(nrOfWorkers: Int) {
     // create the result listener, which will print the result and shutdown the system
@@ -53,7 +56,7 @@ object Project4_client extends App {
     def receive = {
       case CreateClients =>
         for (i <- 0 until nrOfWorkers) {
-          val w = context.actorOf(Props[Worker], "w" + i)
+          val w = context.actorOf(Props[ClientWorker], "w" + i)
           w ! Work()
         }
     }
