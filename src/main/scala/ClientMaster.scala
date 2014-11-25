@@ -26,6 +26,7 @@ class ClientActor extends Actor {
  def receive ={
    case init =>
      println("start")
+     //Ping urs from here
  }
 }
 * 
@@ -38,9 +39,9 @@ object ClientMaster extends App {
   case object Tick extends twitterClient
   case object Tweet extends twitterClient
   case class Work() extends twitterClient
+  case class PrintTweets() extends twitterClient
   case class tweetPrint(random_tweet: String) extends twitterClient
   val system = ActorSystem("TwitterCient")
-  // val clientActor = system.actorOf(Props[ClientActor], name = "clientActor")
   val listener = system.actorOf(Props[ClientListener], name = "listener")
   initialize(nrOfWorkers = 1)
   def initialize(nrOfWorkers: Int) {
@@ -58,6 +59,7 @@ object ClientMaster extends App {
         for (i <- 0 until nrOfWorkers) {
           val w = context.actorOf(Props[ClientWorker], "w" + i)
           w ! Work()
+          //Workers spawned here add a line to ping from here
         }
     }
 

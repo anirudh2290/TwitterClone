@@ -22,12 +22,15 @@ import system.dispatcher
 class ClientWorker extends Actor {
   var count = 0
   def receive = {
-    case Work() =>
-      self ! Tick
-    case Tick =>
-      var cancellable: Cancellable = system.scheduler.schedule(0 milliseconds, 1 milliseconds, self, Tweet)
+    case Work() =>{
+      //var cancellable: Cancellable = system.scheduler.schedule(0 milliseconds, 1 milliseconds, self, Tweet)
+   self ! system.scheduler.schedule(0 milliseconds, 1 milliseconds, self, Tweet)
+    }
     case Tweet =>
       tweet
+      //Print tweets of individual users from here 
+    case PrintTweets() =>
+      printTweets()
   }
 
   def tweet: Unit = {
@@ -39,7 +42,7 @@ class ClientWorker extends Actor {
         //    val random_tweet = Random.nextString(10)
         // print(" This is the tweet   " + random_tweet)
         count = count + 1
-        println("called")
+       // println("called")
         listener ! tweetPrint(random_tweet)
       } else {
         count = count + 1
@@ -47,5 +50,8 @@ class ClientWorker extends Actor {
       }
     } else
       context.stop(self)
+  }
+  def printTweets():Unit ={
+    
   }
 }
