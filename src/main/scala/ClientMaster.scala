@@ -97,6 +97,9 @@ class ClientMaster(statistics: ListBuffer[Int], timeLimit: Int, nrOfWorkers: Int
       context.actorSelection("w" + i) ! cancelAllSchedulers()
       //Workers spawned here add a line to ping from here
     }
+    var actorSysName = "twitter-server"
+
+    context.actorSelection("akka.tcp://" + actorSysName + "@" + hostNameServer + ":" + portNo + "/user/server" + (0) ) ! calculateStats()
     ac.shutdown()
   }
 }

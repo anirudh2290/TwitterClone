@@ -21,7 +21,7 @@ object ServerWorker {
 
 class ServerWorker(nrOfWorkers: Int) extends Actor {
 
-  println(self.path)
+  //println(self.path)
   //Added by Mugdha
   var map = Map[Int, User]()
   var connectionString: String = ""
@@ -52,7 +52,7 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
       map += (beginVal -> usr)
       beginVal += nrOfWorkers
     }
-    printMap()
+    //printMap()
   }
   
   def printMap() = {
@@ -94,11 +94,11 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
     var user: User = map.getOrElse(senderId, null)
 
     var workerContainingFollower:Int = -1
-
+    /*
     println("="*20)
     println("SERVER ::: tweet is " + tweet + ".From " + senderId)
     println("="*20)
-
+    */
     if(user != null) {
       // if user not null, enqueue tweet to message queue and followers message queue
       user.msgQ.enqueue(tweet)
@@ -126,7 +126,7 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
     //TODO same tradeoff made as above. Have to evaluate
     var u: User = map.getOrElse(senderId, null)
     connectionString = "akka.tcp://" + clientActorSystem + "@" + clientIpAddress + ":" + clientPort + "/user/clientmaster1/w" + senderId.toString()
-    println("connectionString is " + connectionString)
+    //println("connectionString is " + connectionString)
     //change this according to the method implemented in the client
     context.actorSelection(connectionString) ! printQueue(u.msgQ)
     /*

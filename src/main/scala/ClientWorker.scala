@@ -68,6 +68,7 @@ class ClientWorker(ac: ActorSystem, servers: Int, probabilityList: (Int, Int), h
     case cancelAllSchedulers() => {
       cancellable2.cancel()
       cancellable3.cancel()
+      context.stop(self)
     }
 
   }
