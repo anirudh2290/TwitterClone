@@ -44,7 +44,7 @@ class Server(clientActorSystem: String, clientIpAddress: String, clientPort: Str
   }
 
   private def receiveCountVal(noOfTweetRequest: Int, noOfTweetResponses: Int, sender: ActorRef): Unit ={
-    println("pathname is " + self.path.name + "noOfTweetResponses is " + noOfTweetResponses + "noOfTweetResponses is " + noOfTweetResponses )
+    println("pathname is " + self.path.name + "noOfTweetRequests is " + noOfTweetRequest + "noOfTweetResponses is " + noOfTweetResponses )
 
     if(sender.path.name == "server0") {
       countOfTweetRequests = countOfTweetRequests - noOfTweetRequest
