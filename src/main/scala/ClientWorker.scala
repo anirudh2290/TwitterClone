@@ -35,7 +35,7 @@ object ClientWorker {
 }
 
 class ClientWorker(ac: ActorSystem, servers: Int, probabilityList: (Int, Int), hostName: String, portNo: String) extends Actor {
-  println(self.path)
+  //println(self.path)
   var count = 0
   var cancellable2: Cancellable = new Cancellable {override def isCancelled: Boolean = false
 

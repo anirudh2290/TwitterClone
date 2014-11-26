@@ -28,7 +28,7 @@ object project4 {
       val system = ActorSystem("twitter-server", serverProps)
 
       for(i <- 0 to numberOfLBs - 1) {
-        var server = system.actorOf(Server.props("twitter-client", clientProps.getString("akka.remote.netty.tcp.hostname"), clientProps.getString("akka.remote.netty.tcp.port"), numberOfLBs), "server" + i)
+        var server = system.actorOf(Server.props(system, "twitter-client", clientProps.getString("akka.remote.netty.tcp.hostname"), clientProps.getString("akka.remote.netty.tcp.port"), numberOfLBs), "server" + i)
         if(i == 0) {
           server ! Init(numberOfUsers, true)
         } else{

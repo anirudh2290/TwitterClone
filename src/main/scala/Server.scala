@@ -1,9 +1,10 @@
 /**
  * Created by Anirudh on 11/23/2014.
  */
-import akka.actor.{ActorRef, ActorSystem, Props, Actor, Inbox}
+import akka.actor._
 import scala.collection.immutable.List
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.duration._
 
 //will add isFirst later
 //case class init(numberOfUsers: Int, isFirstServer: Boolean)
@@ -12,13 +13,17 @@ case class giveTweetFromRouter()
 case class Init(numUsers:Int, isFirstServer: Boolean)
 case class calculateStats()
 case class receiveCount(noOfTweetRequest: Int, noOfTweetResponses: Int)
+case class countTweetRequestsAndResponses()
+case class initializeScheduler()
+case class sendTweetAndResponsesServer(countIndex: Int, tweetRequest: Int, tweetResponse: Int)
+case class cancelSchedulers()
 
 object Server {
-  def props(clientActorSystem: String, clientIpAddress: String, clientPort: String, noOfLBS: Int):Props =
-    Props(classOf[Server], clientActorSystem, clientIpAddress, clientPort, noOfLBS)
+  def props(serverAC: ActorSystem, clientActorSystem: String, clientIpAddress: String, clientPort: String, noOfLBS: Int):Props =
+    Props(classOf[Server], serverAC, clientActorSystem, clientIpAddress, clientPort, noOfLBS)
 }
 
-class Server(clientActorSystem: String, clientIpAddress: String, clientPort: String, noOfLBS: Int) extends Actor{
+class Server(serverAC: ActorSystem, clientActorSystem: String, clientIpAddress: String, clientPort: String, noOfLBS: Int) extends Actor{
    
   /*keep number of server workers equal to nr of cores*/
   val nrOfCores: Int = Runtime.getRuntime().availableProcessors()
@@ -28,19 +33,57 @@ class Server(clientActorSystem: String, clientIpAddress: String, clientPort: Str
   var finalCountOfTweetResponses: Int = 0
   var isFirstServer: Boolean = false
   var totalReceived: Int = 0
+  var tweetRequestsList: ListBuffer[Int] = new ListBuffer[Int]
+  var tweetResponseList: ListBuffer[Int] = new ListBuffer[Int]
+  var tweetRequestSample: Int = 0
+  var tweetResponseSample: Int = 0
+  var countIndex: Int = 0
+  var cancellable: Cancellable = new Cancellable {override def isCancelled: Boolean = false
+
+    override def cancel(): Boolean = false
+  }
 
   def receive = {
     //case init(numberOfUsers: Int, isFirstServer: Boolean) => InitializeServer(numberOfUsers, isFirstServer)
     //MUGDHA:: Changed the parameter passed to numUsers Please take a look
-    case Init(numUsers, isFirstServer) => {
-      if(isFirstServer) {
-        InitializeServer(numUsers)
-      }
-    }
+    case Init(numUsers, isFirstServer) => initScheduler(numUsers, isFirstServer)
   	case sendTweetToRouter(tweet: String) => sendTweetToRouter(tweet,sender())
     case giveTweetFromRouter() => giveTweetFromRouter(sender())
     case calculateStats() => calculateStatsServer(sender())
     case receiveCount(noOfTweetRequest: Int, noOfTweetResponses: Int) => receiveCountVal(noOfTweetRequest, noOfTweetResponses, sender())
+    case countTweetRequestsAndResponses() => countTweetReqsAndResps()
+    case sendTweetAndResponsesServer(countIndex: Int, tweetRequest: Int, tweetResponse: Int) => sendTweetAndResponses(countIndex, tweetRequest, tweetResponse)
+    case cancelSchedulers() => {cancellable.cancel()}
+  }
+
+  private def initScheduler(numUsers: Int, isFstServer: Boolean): Unit ={
+    if(isFstServer) {
+      InitializeServer(numUsers)
+    }
+    import serverAC.dispatcher
+    cancellable = serverAC.scheduler.schedule(0.5 seconds, 1 seconds, self , countTweetRequestsAndResponses())
+  }
+
+  private def countTweetReqsAndResps(): Unit = {
+    context.actorSelection("../server" + 0 ) ! sendTweetAndResponsesServer(countIndex, tweetRequestSample, tweetResponseSample)
+    tweetRequestSample = 0
+    tweetResponseSample = 0
+    countIndex = countIndex + 1
+  }
+
+  private def sendTweetAndResponses(countIndex: Int, tweetRequest: Int, tweetResponse: Int): Unit ={
+    //println("Inside sendTweetAndResponses " + "countIndex is " +  countIndex + "tweetRequest is " +  tweetRequest + "tweetResponse is " + tweetResponse)
+    if(tweetRequestsList.size <= countIndex) {
+      tweetRequestsList += tweetRequest
+    } else {
+      tweetRequestsList(countIndex) = tweetRequestsList(countIndex) + tweetRequest
+    }
+
+    if(tweetResponseList.size <= countIndex) {
+      tweetResponseList += tweetResponse
+    } else {
+      tweetResponseList(countIndex) = tweetResponseList(countIndex) + tweetResponse
+    }
   }
 
   private def receiveCountVal(noOfTweetRequest: Int, noOfTweetResponses: Int, sender: ActorRef): Unit ={
@@ -61,11 +104,21 @@ class Server(clientActorSystem: String, clientIpAddress: String, clientPort: Str
 
 
     if(totalReceived == (noOfLBS)) {
+      for(i <- 1 to noOfLBS - 1) {
+        println("Inside totalReceived == noOfLBS")
+        println(self.path)
+        context.actorSelection("../server" + i.toString()) ! cancelSchedulers()
+      }
+
       println("="*30)
       println("The total countOfTweetRequests")
       println(countOfTweetRequests)
       println("The total countOfTweetResponses")
       println(countOfTweetResponses)
+      println("Lists are tweetRequestsList ::::::::::::")
+      println(tweetRequestsList)
+      println("Lists are tweetResponsList :::::::::::::")
+      println(tweetResponseList)
       println("="*30)
     }
   }
@@ -111,6 +164,7 @@ class Server(clientActorSystem: String, clientIpAddress: String, clientPort: Str
 
   private def sendTweetToRouter(tweet: String, senderRef: ActorRef): Unit = {
     countOfTweetRequests = countOfTweetRequests + 1
+    tweetRequestSample = tweetRequestSample + 1
     var senderNameString = senderRef.path.name
     var senderId = senderNameString.substring(1).toInt
     var sendTo: Int = senderId % nrOfCores
@@ -121,6 +175,7 @@ class Server(clientActorSystem: String, clientIpAddress: String, clientPort: Str
 
   private def giveTweetFromRouter(senderRef: ActorRef): Unit ={
     countOfTweetResponses = countOfTweetResponses + 1
+    tweetResponseSample = tweetResponseSample + 1
     var senderNameString = senderRef.path.name
     var senderId = senderNameString.substring(1).toInt
     var sendTo: Int = senderId % nrOfCores
