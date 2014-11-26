@@ -46,7 +46,9 @@ object project4 {
 
       /* TODO statistics calculation has to be changed
       * */
-        var c: Int = (numberOfUsers*21)/365
+
+      /*
+         var c: Int = (numberOfUsers*21)/365
        var percent: Int = 90
       if(numberOfUsers <= 9){
         percent = 100
@@ -62,7 +64,7 @@ object project4 {
           //println(statistics(i))
         }
       }
-
+      */
 
       var client = system.actorOf(ClientMaster.props(statistics, numberOfUsers, system, numberOfLBs, hostname, portNo),"clientmaster1")
       client ! initProbabilityList()

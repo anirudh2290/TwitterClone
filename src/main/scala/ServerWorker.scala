@@ -52,7 +52,7 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
       map += (beginVal -> usr)
       beginVal += nrOfWorkers
     }
-    //printMap()
+    printMap()
   }
   
   def printMap() = {

@@ -80,7 +80,7 @@ class ClientMaster(statistics: ListBuffer[Int], timeLimit: Int, nrOfWorkers: Int
     for (i <- 0 until nrOfWorkers) {
       val w = context.actorOf(ClientWorker.props(ac, servers, probabilityList, hostNameServer, portNo), "w" + i)
       //Workers spawned here add a line to ping from here
-      w ! Work()
+      //w ! Work()
     }
 
     //self ! stopWatchBegin()

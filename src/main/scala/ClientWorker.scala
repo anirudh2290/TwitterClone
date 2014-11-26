@@ -53,7 +53,10 @@ class ClientWorker(ac: ActorSystem, servers: Int, probabilityList: (Int, Int), h
     case Tweet() => tweet()
     case receiveTweet() => receiveTweets()
     case printQueue(msgQ: mutable.Queue[String]) => {
+      println("*"*20)
+      println("worker name " + self.path.name)
       println(msgQ.toString())
+      println("*"*20)
     }
     case Work() =>{
       //var cancellable: Cancellable = system.scheduler.schedule(0 milliseconds, 1 milliseconds, self, Tweet)
@@ -84,7 +87,10 @@ class ClientWorker(ac: ActorSystem, servers: Int, probabilityList: (Int, Int), h
       val random_tweet = Random.alphanumeric.take(140).mkString
       //    val random_tweet = Random.nextString(10)
       // print(" This is the tweet   " + random_tweet)
-
+      println("="*30)
+      println("worker name " + self.path.name)
+      println("random tweet sent is " + random_tweet + "count value is " + count )
+      println("="*30)
       context.actorSelection("akka.tcp://" + actorSysName + "@" + hostName + ":" + portNo + "/user/server" + (count%servers) ) ! sendTweetToRouter(random_tweet)
       count = count + 1
      // println("called")
