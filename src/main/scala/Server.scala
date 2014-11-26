@@ -24,6 +24,8 @@ class Server(clientActorSystem: String, clientIpAddress: String, clientPort: Str
   val nrOfCores: Int = Runtime.getRuntime().availableProcessors()
   var countOfTweetRequests: Int = 0
   var countOfTweetResponses: Int = 0
+  var finalCountOfTweetRequests: Int = 0
+  var finalCountOfTweetResponses: Int = 0
   var isFirstServer: Boolean = false
   var totalReceived: Int = 0
 
@@ -38,10 +40,17 @@ class Server(clientActorSystem: String, clientIpAddress: String, clientPort: Str
   	case sendTweetToRouter(tweet: String) => sendTweetToRouter(tweet,sender())
     case giveTweetFromRouter() => giveTweetFromRouter(sender())
     case calculateStats() => calculateStatsServer(sender())
-    case receiveCount(noOfTweetRequest: Int, noOfTweetResponses: Int) => receiveCountVal(noOfTweetRequest, noOfTweetResponses)
+    case receiveCount(noOfTweetRequest: Int, noOfTweetResponses: Int) => receiveCountVal(noOfTweetRequest, noOfTweetResponses, sender())
   }
 
-  private def receiveCountVal(noOfTweetRequest: Int, noOfTweetResponses: Int): Unit ={
+  private def receiveCountVal(noOfTweetRequest: Int, noOfTweetResponses: Int, sender: ActorRef): Unit ={
+    println("pathname is " + self.path.name + "noOfTweetResponses is " + noOfTweetResponses + "noOfTweetResponses is " + noOfTweetResponses )
+
+    if(sender.path.name == "server0") {
+      countOfTweetRequests = countOfTweetRequests - noOfTweetRequest
+      countOfTweetResponses = countOfTweetResponses - noOfTweetResponses
+    }
+
     if(isFirstServer) {
       countOfTweetRequests = countOfTweetRequests + noOfTweetRequest
       countOfTweetResponses = countOfTweetResponses + noOfTweetResponses
@@ -49,6 +58,7 @@ class Server(clientActorSystem: String, clientIpAddress: String, clientPort: Str
     }
 
     println("totalReceived is " + totalReceived)
+
 
     if(totalReceived == (noOfLBS)) {
       println("="*30)
@@ -68,7 +78,7 @@ class Server(clientActorSystem: String, clientIpAddress: String, clientPort: Str
            context.actorSelection("../server" + i.toString()) ! calculateStats()
          }
     }
-    context.actorSelection("../server" + 0.toString()) ! receiveCountVal(countOfTweetRequests, countOfTweetResponses)
+    context.actorSelection("../server" + 0.toString()) ! receiveCount(countOfTweetRequests, countOfTweetResponses)
 
 
   }
@@ -100,6 +110,7 @@ class Server(clientActorSystem: String, clientIpAddress: String, clientPort: Str
   }
 
   private def sendTweetToRouter(tweet: String, senderRef: ActorRef): Unit = {
+    countOfTweetRequests = countOfTweetRequests + 1
     var senderNameString = senderRef.path.name
     var senderId = senderNameString.substring(1).toInt
     var sendTo: Int = senderId % nrOfCores
@@ -109,6 +120,7 @@ class Server(clientActorSystem: String, clientIpAddress: String, clientPort: Str
   }
 
   private def giveTweetFromRouter(senderRef: ActorRef): Unit ={
+    countOfTweetResponses = countOfTweetResponses + 1
     var senderNameString = senderRef.path.name
     var senderId = senderNameString.substring(1).toInt
     var sendTo: Int = senderId % nrOfCores
