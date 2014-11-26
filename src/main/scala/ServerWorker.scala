@@ -95,6 +95,10 @@ class ServerWorker(nrOfWorkers: Int) extends Actor {
 
     var workerContainingFollower:Int = -1
 
+    println("="*20)
+    println("SERVER ::: tweet is " + tweet + ".From " + senderId)
+    println("="*20)
+
     if(user != null) {
       // if user not null, enqueue tweet to message queue and followers message queue
       user.msgQ.enqueue(tweet)
