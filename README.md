@@ -1,7 +1,11 @@
 Simulation of Twitter clients
 ==============================
 
-Team members: Ankit Sharma (UFID: 24868901) Mugdha Khade (UFID: 98907680) Bharath Kurumaddali (UFID: 65130561) Anirudh Subramanian (UFID: 94453124) 
+Team members: 
+Ankit Sharma (UFID: 24868901) 
+Mugdha Khade (UFID: 98907680) 
+Bharath Kurumaddali (UFID: 65130561) 
+Anirudh Subramanian (UFID: 94453124) 
 
 Environment tested on :: cise Lin servers Number of cores :: 8
 
@@ -32,7 +36,7 @@ Client side::
 
 We kept a client master and the client workers which tweet are created by the client master. The client workers send and receive tweets at periodic time intervals.
 The period that we have kept for sending tweets is 10 seconds and the period that we have kept for receiving for receiving tweets is 1 second. 
-Also not every client doesnt send a tweet every second. They only send the tweet when the random number generated between 0 and 1 falls below the stable Probability
+Also not every client doesnt send a tweet every second. They only send the tweet when the random number generated between 0 and 1 falls below the stable Probability.
 We have peaks in the middle of the time duration and we increase the probability during this time duration which will allow for more clients to tweet.
 Thus our statistics model handles nearly stable tweets per seconds with peaks many times more than the normal. 
 We obtained the statistics model from here :: https://blog.twitter.com/2013/new-tweets-per-second-record-and-how
@@ -45,7 +49,7 @@ Server side::
 -------------
 
 On the server side there are servers which act as load balancers and do the routing to the ServerWorkers.
-The following happens in the ServerWorkers
+The following happens in the ServerWorkers.
 Each ServerWorker contains a Map of id to User data structure . The User data structure contains the message queue and followers list.
 The followers list is initialized when the init is called for the first server. Every time it gets a tweet , the worker adds it to its own
 message queue as well as followers message queue.
@@ -55,11 +59,12 @@ Statistics::
 ------------
 
 We have measured the following statistics on the server side. 
-We have measured the total count of tweets received and total count for timeline requests received
+We have measured the total count of tweets received and total count for timeline requests received.
 We have also measured the total count of tweets every second received at the server level for tweets received and timeline sent back.
 
 Please refer to the excel sheets at the root of the project for more information.
 
 
 
+Maximum number of users we tested for :: 1 million
 
