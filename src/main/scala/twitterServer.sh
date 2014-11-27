@@ -1,3 +1,4 @@
+#!/bin/sh
 numUsers=(5000 7000 10000 30000 50000 80000 100000 120000 150000)
 numberOfLBs=(2)
 isServer=true
