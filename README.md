@@ -62,7 +62,7 @@ We have measured the following statistics on the server side.
 We have measured the total count of tweets received and total count for timeline requests received.
 We have also measured the total count of tweets every second received at the server level for tweets received and timeline sent back.
 
-Please refer to the excel sheets at the root of the project for more information.
+Please refer to the Graph.docx at the root of the project for more information.
 
 
 
